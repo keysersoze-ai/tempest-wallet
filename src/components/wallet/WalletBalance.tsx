@@ -116,7 +116,7 @@ export function WalletBalance({ showAIInsights = true, onRefresh }: WalletBalanc
           {showAIInsights && aiInsights && (
             <Card variant="ai" style={styles.insightsCard}>
               <View style={styles.insightsHeader}>
-                <Ionicons name="brain" size={16} color="#9F4AF3" />
+                <Ionicons name="bulb" size={16} color="#9F4AF3" />
                 <Text style={styles.insightsTitle}>AI Insights</Text>
               </View>
               <Text style={styles.insightsText}>{aiInsights}</Text>

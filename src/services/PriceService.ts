@@ -100,7 +100,7 @@ class PriceService {
       return data;
     } catch (error) {
       console.error('Tempest API error:', error);
-      throw new Error(`Tempest API unavailable: ${error.message}`);
+      throw new Error(`Tempest API unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

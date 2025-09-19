@@ -54,7 +54,7 @@ export function Input({
     isFocused && styles.inputContainerFocused,
     error && styles.inputContainerError,
     disabled && styles.inputContainerDisabled,
-  ];
+  ].filter(Boolean);
 
   const textInputStyle = [
     styles.input,

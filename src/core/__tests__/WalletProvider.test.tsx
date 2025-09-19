@@ -168,7 +168,10 @@ describe('WalletProvider', () => {
       chainId: 1, // Mainnet
       aiPersonality: {
         riskTolerance: 'aggressive' as const,
-        communicationStyle: 'meme_lord' as const
+        communicationStyle: 'meme_lord' as const,
+        tradingStyle: 'yolo' as const,
+        learningAggression: 'high' as const,
+        humorLevel: 'sarcastic' as const
       }
     };
 

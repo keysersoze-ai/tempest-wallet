@@ -102,12 +102,7 @@ export function TradingDashboard() {
     const strategy = tradingEngine.createAICustomStrategy(
       'AI Adaptive Trading',
       'AI-powered adaptive trading strategy that learns from market conditions',
-      {
-        assets: ['ethereum', 'bitcoin'],
-        riskLevel: 'medium',
-        learningRate: 0.1,
-        maxAllocation: 30
-      }
+      'medium'
     );
 
     setStrategies(prev => [...prev, strategy]);
@@ -313,7 +308,7 @@ export function TradingDashboard() {
                 {order.type.toUpperCase()} {order.asset}
               </Text>
               <Text style={styles.orderAmount}>
-                {parseFloat(order.amount.toString()) / 1e18} ETH
+                {order.amount ? (parseFloat(order.amount.toString()) / 1e18) : 0} ETH
               </Text>
             </View>
             <View style={styles.orderStatus}>
@@ -362,7 +357,7 @@ export function TradingDashboard() {
         {strategies.length === 0 ? (
           <Card variant="default" style={styles.emptyStrategies}>
             <View style={styles.emptyContainer}>
-              <Ionicons name="robot" size={48} color="#666" />
+              <Ionicons name="hardware-chip" size={48} color="#666" />
               <Text style={styles.emptyTitle}>No Trading Strategies</Text>
               <Text style={styles.emptyText}>
                 Create your first AI-powered trading strategy to start automated investing

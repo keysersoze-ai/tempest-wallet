@@ -8,7 +8,7 @@ export interface TradingStrategy {
   id: string;
   name: string;
   description: string;
-  type: 'gas_optimization' | 'network_timing' | 'ai_custom';
+  type: 'gas_optimization' | 'network_timing' | 'ai_custom' | 'dca' | 'momentum';
   enabled: boolean;
   parameters: Record<string, any>;
   riskLevel: 'low' | 'medium' | 'high';
@@ -20,13 +20,14 @@ export interface TradingStrategy {
     successfulTrades: number;
     totalGasSaved: bigint;
     avgConfirmationTime: number;
+    totalReturn: number;
   };
 }
 
 export interface TradeOrder {
   id: string;
   strategyId: string;
-  type: 'optimize_gas' | 'delay_transaction' | 'execute_now';
+  type: 'optimize_gas' | 'delay_transaction' | 'execute_now' | 'buy' | 'sell';
   gasPrice: bigint;
   estimatedWaitTime: number;
   status: 'pending' | 'executed' | 'failed' | 'cancelled';
@@ -34,6 +35,8 @@ export interface TradeOrder {
   txHash?: string;
   aiConfidence: number;
   reasoning: string;
+  asset?: string;
+  amount?: number;
 }
 
 export interface AITradingDecision {
@@ -92,7 +95,8 @@ class TradingEngine {
         totalTrades: 0,
         successfulTrades: 0,
         totalGasSaved: 0n,
-        avgConfirmationTime: 0
+        avgConfirmationTime: 0,
+        totalReturn: 0
       }
     };
 
@@ -122,7 +126,7 @@ class TradingEngine {
       return decision;
     } catch (error) {
       console.error('Gas optimization decision failed:', error);
-      throw new Error(`Cannot optimize gas - Tempest API unavailable: ${error.message}`);
+      throw new Error(`Cannot optimize gas - Tempest API unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -399,7 +403,7 @@ class TradingEngine {
         confidence: networkConditions.confidence
       };
     } catch (error) {
-      throw new Error(`Cannot get network status: ${error.message}`);
+      throw new Error(`Cannot get network status: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -407,17 +411,134 @@ class TradingEngine {
     const strategies = Array.from(this.strategies.values());
     const totalGasSaved = strategies.reduce((sum, s) => sum + Number(s.performance.totalGasSaved), 0);
     const avgConfirmationTime = strategies.reduce((sum, s) => sum + s.performance.avgConfirmationTime, 0) / strategies.length || 0;
+    const totalReturn = strategies.reduce((sum, s) => sum + s.performance.totalReturn, 0);
 
     return {
       totalStrategies: strategies.length,
       activeStrategies: strategies.filter(s => s.enabled).length,
       totalOptimizations: strategies.reduce((sum, s) => sum + s.performance.totalTrades, 0),
       totalGasSaved: totalGasSaved,
+      totalReturn: totalReturn,
       avgConfirmationTime: Math.round(avgConfirmationTime),
       successRate: strategies.reduce((sum, s) => {
         return sum + (s.performance.totalTrades > 0 ? s.performance.successfulTrades / s.performance.totalTrades : 0);
       }, 0) / strategies.length || 0
     };
+  }
+
+  // DCA Strategy Creation
+  createDCAStrategy(
+    name: string,
+    asset: string,
+    amount: number,
+    interval: 'daily' | 'weekly' | 'monthly'
+  ): TradingStrategy {
+    const strategy: TradingStrategy = {
+      id: `dca_${Date.now()}`,
+      name,
+      description: `DCA ${amount} ${asset.toUpperCase()} ${interval}`,
+      type: 'dca',
+      enabled: false,
+      parameters: {
+        asset,
+        amount,
+        interval,
+        nextExecution: Date.now() + this.getIntervalMs(interval)
+      },
+      riskLevel: 'low',
+      maxAllocation: 25, // Max 25% of portfolio for DCA
+      created: Date.now(),
+      performance: {
+        totalTrades: 0,
+        successfulTrades: 0,
+        totalGasSaved: 0n,
+        avgConfirmationTime: 0,
+        totalReturn: 0
+      }
+    };
+
+    this.strategies.set(strategy.id, strategy);
+    this.saveStrategies();
+    return strategy;
+  }
+
+  // Momentum Strategy Creation
+  createMomentumStrategy(
+    name: string,
+    asset: string,
+    lookbackDays: number,
+    threshold: number
+  ): TradingStrategy {
+    const strategy: TradingStrategy = {
+      id: `momentum_${Date.now()}`,
+      name,
+      description: `Momentum trading for ${asset.toUpperCase()} with ${lookbackDays}d lookback`,
+      type: 'momentum',
+      enabled: false,
+      parameters: {
+        asset,
+        lookbackDays,
+        threshold,
+        lastSignal: null
+      },
+      riskLevel: 'medium',
+      maxAllocation: 50, // Max 50% for momentum strategies
+      created: Date.now(),
+      performance: {
+        totalTrades: 0,
+        successfulTrades: 0,
+        totalGasSaved: 0n,
+        avgConfirmationTime: 0,
+        totalReturn: 0
+      }
+    };
+
+    this.strategies.set(strategy.id, strategy);
+    this.saveStrategies();
+    return strategy;
+  }
+
+  // AI Custom Strategy Creation
+  createAICustomStrategy(
+    name: string,
+    aiPrompt: string,
+    riskLevel: 'low' | 'medium' | 'high' = 'medium'
+  ): TradingStrategy {
+    const strategy: TradingStrategy = {
+      id: `ai_custom_${Date.now()}`,
+      name,
+      description: `AI-powered custom strategy: ${aiPrompt.substring(0, 50)}...`,
+      type: 'ai_custom',
+      enabled: false,
+      parameters: {
+        aiPrompt,
+        learningRate: 0.1,
+        confidenceThreshold: 0.7
+      },
+      riskLevel,
+      maxAllocation: riskLevel === 'low' ? 25 : riskLevel === 'medium' ? 50 : 75,
+      created: Date.now(),
+      performance: {
+        totalTrades: 0,
+        successfulTrades: 0,
+        totalGasSaved: 0n,
+        avgConfirmationTime: 0,
+        totalReturn: 0
+      }
+    };
+
+    this.strategies.set(strategy.id, strategy);
+    this.saveStrategies();
+    return strategy;
+  }
+
+  private getIntervalMs(interval: string): number {
+    switch (interval) {
+      case 'daily': return 24 * 60 * 60 * 1000;
+      case 'weekly': return 7 * 24 * 60 * 60 * 1000;
+      case 'monthly': return 30 * 24 * 60 * 60 * 1000;
+      default: return 24 * 60 * 60 * 1000;
+    }
   }
 }
 

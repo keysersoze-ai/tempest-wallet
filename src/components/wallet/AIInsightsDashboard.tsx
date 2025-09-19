@@ -28,7 +28,7 @@ export function AIInsightsDashboard({ onConfigureAI }: AIInsightsDashboardProps)
     if (insight.includes('💸') || insight.includes('Balance')) return 'wallet';
     if (insight.includes('📊') || insight.includes('Market')) return 'trending-up';
     if (insight.includes('⛽') || insight.includes('Gas')) return 'speedometer';
-    if (insight.includes('🤖') || insight.includes('AI')) return 'brain';
+    if (insight.includes('🤖') || insight.includes('AI')) return 'bulb';
     if (insight.includes('🧠') || insight.includes('learned')) return 'school';
     if (insight.includes('🔮') || insight.includes('prediction')) return 'eye';
     if (insight.includes('💭') || insight.includes('Philosophy')) return 'bulb';
@@ -51,7 +51,7 @@ export function AIInsightsDashboard({ onConfigureAI }: AIInsightsDashboardProps)
     return (
       <Card variant="ai" style={styles.statusCard}>
         <View style={styles.statusHeader}>
-          <Ionicons name="brain" size={20} color="#9F4AF3" />
+          <Ionicons name="bulb" size={20} color="#9F4AF3" />
           <Text style={styles.statusTitle}>AI Agent Status</Text>
         </View>
 
